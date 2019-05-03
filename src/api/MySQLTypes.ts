@@ -1,0 +1,1 @@
+export type MySQLSyntaxTemplate = (...args:any[]) => string;
