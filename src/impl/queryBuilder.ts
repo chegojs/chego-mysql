@@ -2,7 +2,7 @@ import { IQueryBuilder } from './../api/interfaces';
 import { MySQLSyntaxTemplate, LogicalOperatorHandleData, QueryBuilderHandle, UseTemplateData } from './../api/types';
 import { templates } from "./templates";
 import { QuerySyntaxEnum, PropertyOrLogicalOperatorScope, IQuerySchemeElement, Property, Fn, Obj, Table } from "@chego/chego-api";
-import { parsePropertyToString, parseTableToString } from './utils';
+import { parsePropertyToString, parseTableToString, adjustValue } from './utils';
 import { mergePropertiesWithLogicalAnd, isLogicalOperator, isLogicalOperatorScope, newLogicalOperatorScope } from '@chego/chego-tools';
 
 export const newQueryBuilder = (): IQueryBuilder => {
@@ -56,46 +56,69 @@ export const newQueryBuilder = (): IQueryBuilder => {
             keychain = [...params];
         }
     }
-    
-    const addMissingKey = (list:string[]) => (key: string) => {
+
+    const addMissingKey = (list: string[]) => (key: string) => {
         if (list.indexOf(key) === -1) {
             list.push(key);
         }
     }
-    
+
     const getUnifiedKeysList = (objects: Obj[]): string[] =>
         objects.reduce((keys: string[], item: Obj) =>
             (Object.keys(item).forEach(addMissingKey(keys)), keys), []);
-    
-    const addEmptyProperty = (item:Obj) => (key: string) => {
+
+    const addEmptyProperty = (item: Obj) => (key: string) => {
         if (!item.hasOwnProperty(key)) {
             item[key] = null;
         }
     }
-    
-    const addEmptyMissingProperties = (keys: string[]) =>
-        (items: Obj[], item: Obj):Obj[] => (keys.forEach(addEmptyProperty(item)), [...items, item]);
 
-    const prepareInsertValuesList = (values: string[], item: Obj):string[] => 
-        (values.push(`(${Object.values(item).join(', ')})`), values);
+    const addEmptyMissingProperties = (keys: string[]) =>
+        (items: Obj[], item: Obj): Obj[] => (keys.forEach(addEmptyProperty(item)), [...items, item]);
+
+    const prepareInsertValuesList = (result: any[], item: any): any[] => {
+        const values: any[] = Object.values(item).reduce(adjustValues, <any>[]);
+        result.push(`(${values.join(', ')})`)
+        return result;
+    }
 
     const handleInsert = (element: IQuerySchemeElement): void => {
-        const keys:string[] = getUnifiedKeysList(element.params);
-        const items:Obj[] = element.params.reduce(addEmptyMissingProperties(keys),[]);
-        const values:string[] = items.reduce(prepareInsertValuesList,[]);
+        const keys: string[] = getUnifiedKeysList(element.params);
+        const items: Obj[] = element.params.reduce(addEmptyMissingProperties(keys), []);
+        const values: string[] = items.reduce(prepareInsertValuesList, []);
         if (templates.has(element.type)) {
-            query.push(templates.get(element.type)()()(keys,values));
+            query.push(templates.get(element.type)()()(keys, values));
         }
     }
 
-    const parseTablesToStrings = (list:string[], table:Table) => (list.push(parseTableToString(table)),list);
+    const parseTablesToStrings = (list: string[], table: Table) => (list.push(parseTableToString(table)), list);
 
     const handleTo = (element: IQuerySchemeElement): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
-        if(previousType === QuerySyntaxEnum.Insert) {
-            const tables: string[] = element.params.reduce(parseTablesToStrings,[]);
+        if (previousType === QuerySyntaxEnum.Insert) {
+            const tables: string[] = element.params.reduce(parseTablesToStrings, []);
             if (templates.has(element.type)) {
-                query.splice(-1,0,templates.get(element.type)()()(tables));
+                query.splice(-1, 0, templates.get(element.type)()()(tables));
+            }
+        }
+    }
+
+    const handleUpdate = (element: IQuerySchemeElement): void => {
+        const tables: string[] = element.params.reduce(parseTablesToStrings, []);
+        if (templates.has(element.type)) {
+            query.push(templates.get(element.type)()()(tables));
+        }
+    }
+
+    const prepareSetValues = (properties: Obj) => (list: string[], key: string): string[] =>
+        (list.push(`${key} = ${adjustValue(properties[key])}`), list);
+
+    const handleSet = (element: IQuerySchemeElement): void => {
+        const properties: Obj = element.params[0];
+        if (properties) {
+            const values: string[] = Object.keys(properties).reduce(prepareSetValues(properties), []);
+            if (templates.has(element.type)) {
+                query.push(templates.get(element.type)()()([values]));
             }
         }
     }
@@ -114,11 +137,11 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const handleLogicalOperatorScope = (data: LogicalOperatorHandleData): string[] => {
         const conditionHandle: Fn = isMultiValuedCondition(data.condition, data.values) ? handleMultiValuedCondition : handleSingleValuedCondition;
         return (templates.has(data.operator))
-            ? [templates.get(data.operator)()()(), ...conditionHandle(data.condition, data.negation, data.properties, data.values)]
+            ? [templates.get(data.operator)()()(), ...data.properties.reduce(conditionHandle(data.condition, data.negation, data.values), [])]
             : [];
     }
 
-    const useTemplate = ({type, negation, property, values}:UseTemplateData): string[] => {
+    const useTemplate = ({ type, negation, property, values }: UseTemplateData): string[] => {
         const key: string = property ? parsePropertyToString(property, true) : null;
         return (templates.has(type))
             ? [templates.get(type)(negation)(key)(...values)]
@@ -134,36 +157,39 @@ export const newQueryBuilder = (): IQueryBuilder => {
                     if (isLogicalOperatorScope(value)) {
                         result.push(...handleLogicalOperatorScope({ operator: value.type, condition: type, negation, properties: [key], values: value.properties }));
                     } else {
-                        result.push(...useTemplate({type, negation, property:key, values:[value]}));
+                        result.push(...useTemplate({ type, negation, property: key, values: [adjustValue(value)] }));
                     }
                 });
             }
             return result;
         }
 
+    const adjustValues = (list: any[], value: any) => (list.push(adjustValue(value)), list);
+
     const handleSingleValuedCondition = (type: QuerySyntaxEnum, negation: boolean, values: any[]) =>
         (parts: string[], key: PropertyOrLogicalOperatorScope): string[] => {
             if (isLogicalOperatorScope(key)) {
                 parts.push(...handleLogicalOperatorScope({ operator: key.type, condition: type, negation, properties: key.properties, values }));
             } else {
-                parts.push(...useTemplate({type, negation, property:key, values}));
+                const parsedValues: any[] = values.reduce(adjustValues, [])
+                parts.push(...useTemplate({ type, negation, property: key, values: parsedValues }));
             }
             return parts;
         }
 
     const isMultiValuedCondition = (type: QuerySyntaxEnum, values: any[]): boolean =>
         values.length > 1
-            && (
-                type === QuerySyntaxEnum.EQ
-                || type === QuerySyntaxEnum.GT
-                || type === QuerySyntaxEnum.LT
-                || type === QuerySyntaxEnum.Like);
+        && (
+            type === QuerySyntaxEnum.EQ
+            || type === QuerySyntaxEnum.GT
+            || type === QuerySyntaxEnum.LT
+            || type === QuerySyntaxEnum.Like);
 
     const handleCondition = (element: IQuerySchemeElement): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
         const isNegation: boolean = previousType === QuerySyntaxEnum.Not;
 
-        if(isMultiValuedCondition(element.type, element.params)) {
+        if (isMultiValuedCondition(element.type, element.params)) {
             const values: PropertyOrLogicalOperatorScope[] = element.params.reduce(mergePropertiesWithLogicalAnd, []);
             query.push(keychain.reduce(handleMultiValuedCondition(element.type, isNegation, values), []).join(' '));
         } else {
@@ -172,7 +198,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     }
 
     const defaultHandle = (element: IQuerySchemeElement) => {
-        query.push(...useTemplate({type:element.type, values:element.params}));
+        query.push(...useTemplate({ type: element.type, values: element.params }));
     }
 
     const handles = new Map<QuerySyntaxEnum, QueryBuilderHandle>([
@@ -191,9 +217,9 @@ export const newQueryBuilder = (): IQueryBuilder => {
         [QuerySyntaxEnum.CloseParentheses, defaultHandle],
         [QuerySyntaxEnum.Delete, defaultHandle],
         [QuerySyntaxEnum.Insert, handleInsert],
-        [QuerySyntaxEnum.Update, defaultHandle],
+        [QuerySyntaxEnum.Update, handleUpdate],
         [QuerySyntaxEnum.To, handleTo],
-        [QuerySyntaxEnum.Set, defaultHandle],
+        [QuerySyntaxEnum.Set, handleSet],
         // [QuerySyntaxEnum.Exists,],
         [QuerySyntaxEnum.Union, defaultHandle],
         [QuerySyntaxEnum.OrderBy, defaultHandle],
@@ -207,17 +233,17 @@ export const newQueryBuilder = (): IQueryBuilder => {
     ]);
 
     const builder = {
-        withInnerQuery: (innerQUery:string) => {
+        withInnerQuery: (innerQUery: string) => {
             query.push(`( ${innerQUery} )`)
         },
-        withElement: (element: IQuerySchemeElement):void => {
+        withElement: (element: IQuerySchemeElement): void => {
             const handle = handles.get(element.type);
             if (handle) {
                 handle(element);
             }
             history.push(element.type);
         },
-        build:():string => query.join(' ')
+        build: (): string => query.join(' ')
     }
     return builder;
 }

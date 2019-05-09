@@ -14,3 +14,10 @@ export const parseTableToString = (table: Table, useAlias?: boolean): string =>
 
 export const parsePropertyToEquation = (properties:any) => (list:string[], key:string) => 
 (list.push(`${key} = ${properties[key]}`), list);
+
+export const adjustValue = (value:any):any => {
+    if(typeof value === 'string') {
+        return (/(\".*.\")|(\'.*.\')/.test(value)) ? value : `"${value}"`
+    }
+    return value;
+}
