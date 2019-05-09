@@ -1,22 +1,20 @@
 import * as mysql from 'mysql'
 
-import { IQueryScheme, IQuerySchemeArray, IDatabaseDriver, IQuery, IQuerySchemeElement, QuerySyntaxEnum } from '@chego/chego-api';
+import { IQueryScheme, IQuerySchemeArray, IDatabaseDriver, IQuery, IQuerySchemeElement } from '@chego/chego-api';
 import { isQueryScheme } from '@chego/chego-tools';
 import { newQueryBuilder } from './queryBuilder';
+import { IQueryBuilder } from '../api/interfaces';
 
 const parseScheme = (scheme: IQueryScheme): string => {
     const schemeArr: IQuerySchemeArray = scheme.toArray();
-    const queryBuilder:any = newQueryBuilder();
+    const queryBuilder:IQueryBuilder = newQueryBuilder();
 
     schemeArr.forEach((element:IQuerySchemeElement) => {
-        if (isQueryScheme(element.params[0])) {
-            // queryBuilder.withInnerQuery(`(${parseScheme(element.params[0])})`);
-        } else {
-            console.log('>>>>>>', QuerySyntaxEnum[element.type], element.params);
-            queryBuilder.withElement(element);
-        }
+        queryBuilder.with(element.type, 
+            isQueryScheme(element.params[0]) 
+                ? [`(${parseScheme(element.params[0])})`] 
+                : element.params);
     });
-
     return queryBuilder.build();
 }
 

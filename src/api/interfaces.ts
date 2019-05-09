@@ -1,7 +1,6 @@
-import { IQuerySchemeElement } from '@chego/chego-api';
+import { QuerySyntaxEnum } from '@chego/chego-api';
 
 export interface IQueryBuilder {
-    withInnerQuery(query:string):void;
-    withElement(element: IQuerySchemeElement):void;
+    with(type:QuerySyntaxEnum,params:any[]):void;
     build():string;
 }
