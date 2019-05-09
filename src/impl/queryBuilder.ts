@@ -21,7 +21,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
                     return result;
                 }, []).join(', ');
 
-            query.push(template()()(selection));
+            query.push(template()(selection));
         }
     }
 
@@ -34,7 +34,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
                 return result;
             }, []).join(', ');
 
-            query.push(template()()(tables));
+            query.push(template()(tables));
         }
     }
 
@@ -51,7 +51,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
             lastKey.properties.push(...params);
         } else {
             if (keychain.length === 0 && templates.has(QuerySyntaxEnum.Where)) {
-                query.push(templates.get(QuerySyntaxEnum.Where)()()());
+                query.push(templates.get(QuerySyntaxEnum.Where)()());
             }
             keychain = [...params];
         }
@@ -87,7 +87,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         const items: Obj[] = element.params.reduce(addEmptyMissingProperties(keys), []);
         const values: string[] = items.reduce(prepareInsertValuesList, []);
         if (templates.has(element.type)) {
-            query.push(templates.get(element.type)()()(keys, values));
+            query.push(templates.get(element.type)()(keys, values));
         }
     }
 
@@ -98,7 +98,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         if (previousType === QuerySyntaxEnum.Insert) {
             const tables: string[] = element.params.reduce(parseTablesToStrings, []);
             if (templates.has(element.type)) {
-                query.splice(-1, 0, templates.get(element.type)()()(tables));
+                query.splice(-1, 0, templates.get(element.type)()(tables));
             }
         }
     }
@@ -106,7 +106,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const handleUpdate = (element: IQuerySchemeElement): void => {
         const tables: string[] = element.params.reduce(parseTablesToStrings, []);
         if (templates.has(element.type)) {
-            query.push(templates.get(element.type)()()(tables));
+            query.push(templates.get(element.type)()(tables));
         }
     }
 
@@ -118,7 +118,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         if (properties) {
             const values: string[] = Object.keys(properties).reduce(prepareSetValues(properties), []);
             if (templates.has(element.type)) {
-                query.push(templates.get(element.type)()()([values]));
+                query.push(templates.get(element.type)()([values]));
             }
         }
     }
@@ -129,7 +129,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
             keychain.push(newLogicalOperatorScope(element.type));
         } else {
             if (templates.has(element.type)) {
-                query.push(templates.get(element.type)()()());
+                query.push(templates.get(element.type)()());
             }
         }
     }
@@ -137,14 +137,14 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const handleLogicalOperatorScope = (data: LogicalOperatorHandleData): string[] => {
         const conditionHandle: Fn = isMultiValuedCondition(data.condition, data.values) ? handleMultiValuedCondition : handleSingleValuedCondition;
         return (templates.has(data.operator))
-            ? [templates.get(data.operator)()()(), ...data.properties.reduce(conditionHandle(data.condition, data.negation, data.values), [])]
+            ? [templates.get(data.operator)()(), ...data.properties.reduce(conditionHandle(data.condition, data.negation, data.values), [])]
             : [];
     }
 
     const useTemplate = ({ type, negation, property, values }: UseTemplateData): string[] => {
         const key: string = property ? parsePropertyToString(property, true) : null;
         return (templates.has(type))
-            ? [templates.get(type)(negation)(key)(...values)]
+            ? [templates.get(type)({negation, property:key})(...values)]
             : [];
     }
 
@@ -220,7 +220,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         [QuerySyntaxEnum.Update, handleUpdate],
         [QuerySyntaxEnum.To, handleTo],
         [QuerySyntaxEnum.Set, handleSet],
-        // [QuerySyntaxEnum.Exists,],
+        [QuerySyntaxEnum.Exists, defaultHandle],
         [QuerySyntaxEnum.Union, defaultHandle],
         [QuerySyntaxEnum.OrderBy, defaultHandle],
         [QuerySyntaxEnum.GroupBy, defaultHandle],
