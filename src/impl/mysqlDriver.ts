@@ -1,6 +1,6 @@
 import * as mysql from 'mysql'
 
-import { IQueryScheme, IQuerySchemeArray, IDatabaseDriver, IQuery, IQuerySchemeElement } from '@chego/chego-api';
+import { IQueryScheme, IQuerySchemeArray, IDatabaseDriver, IQuery, IQuerySchemeElement, Obj } from '@chego/chego-api';
 import { isQueryScheme } from '@chego/chego-tools';
 import { newQueryBuilder } from './queryBuilder';
 import { IQueryBuilder } from '../api/interfaces';
@@ -19,31 +19,24 @@ const parseScheme = (scheme: IQueryScheme): string => {
 }
 
 export const chegoMySQL = (): IDatabaseDriver => {
-    // let initialized: boolean = false;
-    // let pool: mysql.Pool;
+    let initialized: boolean = false;
+    let driverConfig:Obj;
 
     const driver = {
         initialize(config: any): IDatabaseDriver {
-            // pool = mysql.createPool(config);
-            // initialized = true;
+            driverConfig = config;
+            initialized = true;
             return driver;
         },
         execute: (query: IQuery): Promise<any> => new Promise((resolve, reject) => {
-            // if (!initialized) {
-            //     return reject(new Error('Driver not initialized'));
-            // }
-            // pool.getConnection((connectionError: mysql.MysqlError, connection: mysql.PoolConnection) => {
-            //     if (connectionError) {
-            //         return reject(connectionError);
-            //     }
-            //     const q: string = parseScheme(query.scheme);
-            //     connection.query(q, (queryError: mysql.MysqlError, result: any) => {
-            //         connection.release();
-            //         return (queryError) ? reject(queryError) : resolve(result);
-            //     });
-            // });
-            console.log('!!!!', parseScheme(query.scheme))
-            resolve(true);
+            if (!initialized) {
+                return reject(new Error('Driver not initialized'));
+            }
+            const connection = mysql.createConnection(driverConfig);
+            connection.query(parseScheme(query.scheme), (error: mysql.MysqlError, result: any) => {
+                connection.end();
+                return (error) ? reject(error) : resolve(result);
+            });
         })
     }
     return driver;
