@@ -7,8 +7,11 @@ const parsePropertyToEquation = (properties:any) => (list:string[], key:string) 
 
 const select:MySQLSyntaxTemplate  = (negation:boolean) => (property:string) => (...columns:string[]) => `SELECT ${columns.join(', ')}`
 
-const insert:MySQLSyntaxTemplate  = (negation:boolean) => (property:string) => (table:string, properties:object) => 
-    `INSERT INTO ${table}(${Object.keys(properties).join(', ')}) VALUES(${Object.values(properties).join(', ')})`
+const insert:MySQLSyntaxTemplate  = (negation:boolean) => (property:string) => (keys:string[], values:string[]) => 
+    `(${keys.join(', ')}) VALUES ${values.join(', ')}`
+
+const to:MySQLSyntaxTemplate  = (negation:boolean) => (property:string) => (table:string, properties:object) => 
+    `INSERT INTO ${table}`
 
 const update:MySQLSyntaxTemplate  = (negation:boolean) => (property:string) => (table:string) => 
     `UPDATE ${table}`;
@@ -98,6 +101,7 @@ export const templates:Map<QuerySyntaxEnum, MySQLSyntaxTemplate> = new Map<Query
     [QuerySyntaxEnum.From, from],
     [QuerySyntaxEnum.Delete, remove],
     [QuerySyntaxEnum.Insert, insert],
+    [QuerySyntaxEnum.To, to],
     [QuerySyntaxEnum.Where, where],
     [QuerySyntaxEnum.On, on],
 ]);

@@ -1,7 +1,7 @@
 import { IQueryBuilder } from './../api/interfaces';
 import { MySQLSyntaxTemplate, LogicalOperatorHandleData, QueryBuilderHandle, UseTemplateData } from './../api/types';
 import { templates } from "./templates";
-import { QuerySyntaxEnum, PropertyOrLogicalOperatorScope, IQuerySchemeElement, Property, Fn } from "@chego/chego-api";
+import { QuerySyntaxEnum, PropertyOrLogicalOperatorScope, IQuerySchemeElement, Property, Fn, Obj, Table } from "@chego/chego-api";
 import { parsePropertyToString, parseTableToString } from './utils';
 import { mergePropertiesWithLogicalAnd, isLogicalOperator, isLogicalOperatorScope, newLogicalOperatorScope } from '@chego/chego-tools';
 
@@ -56,6 +56,49 @@ export const newQueryBuilder = (): IQueryBuilder => {
             keychain = [...params];
         }
     }
+    
+    const addMissingKey = (list:string[]) => (key: string) => {
+        if (list.indexOf(key) === -1) {
+            list.push(key);
+        }
+    }
+    
+    const getUnifiedKeysList = (objects: Obj[]): string[] =>
+        objects.reduce((keys: string[], item: Obj) =>
+            (Object.keys(item).forEach(addMissingKey(keys)), keys), []);
+    
+    const addEmptyProperty = (item:Obj) => (key: string) => {
+        if (!item.hasOwnProperty(key)) {
+            item[key] = null;
+        }
+    }
+    
+    const addEmptyMissingProperties = (keys: string[]) =>
+        (items: Obj[], item: Obj):Obj[] => (keys.forEach(addEmptyProperty(item)), [...items, item]);
+
+    const prepareInsertValuesList = (values: string[], item: Obj):string[] => 
+        (values.push(`(${Object.values(item).join(', ')})`), values);
+
+    const handleInsert = (element: IQuerySchemeElement): void => {
+        const keys:string[] = getUnifiedKeysList(element.params);
+        const items:Obj[] = element.params.reduce(addEmptyMissingProperties(keys),[]);
+        const values:string[] = items.reduce(prepareInsertValuesList,[]);
+        if (templates.has(element.type)) {
+            query.push(templates.get(element.type)()()(keys,values));
+        }
+    }
+
+    const parseTablesToStrings = (list:string[], table:Table) => (list.push(parseTableToString(table)),list);
+
+    const handleTo = (element: IQuerySchemeElement): void => {
+        const previousType: QuerySyntaxEnum = history[history.length - 1];
+        if(previousType === QuerySyntaxEnum.Insert) {
+            const tables: string[] = element.params.reduce(parseTablesToStrings,[]);
+            if (templates.has(element.type)) {
+                query.splice(-1,0,templates.get(element.type)()()(tables));
+            }
+        }
+    }
 
     const handleLogicalOperator = (element: IQuerySchemeElement): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
@@ -103,7 +146,6 @@ export const newQueryBuilder = (): IQueryBuilder => {
             if (isLogicalOperatorScope(key)) {
                 parts.push(...handleLogicalOperatorScope({ operator: key.type, condition: type, negation, properties: key.properties, values }));
             } else {
-                console.log(QuerySyntaxEnum[type],'---->>>>',key, values, useTemplate({type, negation, property:key, values}))
                 parts.push(...useTemplate({type, negation, property:key, values}));
             }
             return parts;
@@ -148,9 +190,9 @@ export const newQueryBuilder = (): IQueryBuilder => {
         [QuerySyntaxEnum.OpenParentheses, defaultHandle],
         [QuerySyntaxEnum.CloseParentheses, defaultHandle],
         [QuerySyntaxEnum.Delete, defaultHandle],
-        // [QuerySyntaxEnum.Insert,],
+        [QuerySyntaxEnum.Insert, handleInsert],
         [QuerySyntaxEnum.Update, defaultHandle],
-        // [QuerySyntaxEnum.To,],
+        [QuerySyntaxEnum.To, handleTo],
         [QuerySyntaxEnum.Set, defaultHandle],
         // [QuerySyntaxEnum.Exists,],
         [QuerySyntaxEnum.Union, defaultHandle],
