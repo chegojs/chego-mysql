@@ -1,6 +1,6 @@
 {
   "name": "@chego/chego-mysql",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MySQL driver for Chego library.",
   "main": "lib/index.js",
   "files": [
