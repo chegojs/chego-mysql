@@ -22,16 +22,42 @@ const chego = newChego(chegoMySQL, {
 
 const query = newQuery();
 
-query.select('*').from('superheroes','villains').where('origin').is.eq('Gotham City').limit(10);
+query.select('*').from('superheroes').where('origin').is.eq('Gotham City').limit(10);
 
 chego.execute(query)
 .then(result => { console.log('RESULT:', JSON.stringify(result)) })
 .catch(error => { console.log('ERROR:', error); });
 
 ```
+
 Under the hood it uses Node.js MySQL module, so please refer to this [link](https://github.com/mysqljs/mysql) for more information on the configuration. 
 
 For more information on how `Chego` works with database drivers, please read [Chego Usage guide](https://github.com/chegojs/chego/blob/master/README.md).
+
+## Tips
+
+#### Running multiple queries and transactions
+
+It is possible to run a set of queries synchronously. By default, these queries are set in [the transaction statement](http://www.mysqltutorial.org/mysql-transaction.aspx).
+
+```
+const query1 = newQuery().insert({
+            name: "Thanos",
+            alterEgo: "",
+            origin: "Titan",
+            publisher: "mcUT642",
+            createdBy: [
+                "jsTR612"
+            ],
+            firstAppearance: "tiIM771"
+        }).to('villains');
+        
+const query2 = newQuery().select('*').from('villains').limit(10);
+
+chego.execute(query1, query2)
+.then(result => { console.log('RESULT:', JSON.stringify(result)) })
+.catch(error => { console.log('ERROR:', error); });
+```
 
 ## Contribute
 There is still a lot to do, so if you want to be part of the Chego project and make it better, it's great.
