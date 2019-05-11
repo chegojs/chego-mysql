@@ -42,9 +42,9 @@
     "typescript": "^3.4.3"
   },
   "dependencies": {
-    "@chego/chego-api": "^1.0.4",
-    "@chego/chego-tools": "^1.0.4",
-    "@chego/chego": "^1.0.1",
+    "@chego/chego-api": "^1.1.4",
+    "@chego/chego-tools": "^1.0.9",
+    "@chego/chego": "^1.1.0",
     "mysql": "^2.16.0"
   }
 }
