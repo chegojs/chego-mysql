@@ -3,7 +3,7 @@ import { MySQLSyntaxTemplate, LogicalOperatorHandleData, QueryBuilderHandle, Use
 import { templates } from "./templates";
 import { QuerySyntaxEnum, PropertyOrLogicalOperatorScope, Property, Fn, Obj, Table } from "@chego/chego-api";
 import { parsePropertyToString, parseTableToString, adjustValue } from './utils';
-import { mergePropertiesWithLogicalAnd, isLogicalOperator, isLogicalOperatorScope, newLogicalOperatorScope } from '@chego/chego-tools';
+import { mergePropertiesWithLogicalAnd, isLogicalOperatorScope, newLogicalOperatorScope } from '@chego/chego-tools';
 
 export const newQueryBuilder = (): IQueryBuilder => {
     let keychain: PropertyOrLogicalOperatorScope[] = [];
@@ -43,7 +43,10 @@ export const newQueryBuilder = (): IQueryBuilder => {
         const penultimateType: QuerySyntaxEnum = history[history.length - 2];
         const values: PropertyOrLogicalOperatorScope[] = params.reduce(mergePropertiesWithLogicalAnd, []);
 
-        if (isLogicalOperator(previousType) && penultimateType === QuerySyntaxEnum.Where) {
+        if (
+            (previousType === QuerySyntaxEnum.And || previousType === QuerySyntaxEnum.Or)
+            && penultimateType === QuerySyntaxEnum.Where
+        ) {
             const lastKey: PropertyOrLogicalOperatorScope = keychain[keychain.length - 1];
             if (!isLogicalOperatorScope(lastKey)) {
                 throw new Error(`Key ${lastKey} should be LogialOperatorScope type!`)

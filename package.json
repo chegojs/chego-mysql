@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@chego/chego-api": "^1.1.5",
-    "@chego/chego-tools": "^1.0.10",
+    "@chego/chego-tools": "^1.1.0",
     "mysql": "^2.16.0"
   }
 }
