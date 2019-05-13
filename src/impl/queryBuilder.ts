@@ -2,7 +2,7 @@ import { IQueryBuilder } from './../api/interfaces';
 import { MySQLSyntaxTemplate, LogicalOperatorHandleData, QueryBuilderHandle, UseTemplateData } from './../api/types';
 import { templates } from "./templates";
 import { QuerySyntaxEnum, PropertyOrLogicalOperatorScope, Property, Fn, Obj, Table } from "@chego/chego-api";
-import { parsePropertyToString, parseTableToString, adjustValue } from './utils';
+import { parsePropertyToString, parseTableToString, escapeValue } from './utils';
 import { mergePropertiesWithLogicalAnd, isLogicalOperatorScope, newLogicalOperatorScope } from '@chego/chego-tools';
 
 export const newQueryBuilder = (): IQueryBuilder => {
@@ -80,7 +80,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         (items: Obj[], item: Obj): Obj[] => (keys.forEach(addEmptyProperty(item)), [...items, item]);
 
     const prepareInsertValuesList = (result: any[], item: any): any[] => {
-        const values: any[] = Object.values(item).reduce(adjustValues, <any>[]);
+        const values: any[] = Object.values(item).reduce(escapeValues, <any>[]);
         result.push(`(${values.join(', ')})`)
         return result;
     }
@@ -114,7 +114,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     }
 
     const prepareSetValues = (properties: Obj) => (list: string[], key: string): string[] =>
-        (list.push(`${key} = ${adjustValue(properties[key])}`), list);
+        (list.push(`${key} = ${escapeValue(properties[key])}`), list);
 
     const handleSet = (type:QuerySyntaxEnum, params:any[]): void => {
         const properties: Obj = params[0];
@@ -160,21 +160,21 @@ export const newQueryBuilder = (): IQueryBuilder => {
                     if (isLogicalOperatorScope(value)) {
                         result.push(...handleLogicalOperatorScope({ operator: value.type, condition: type, negation, properties: [key], values: value.properties }));
                     } else {
-                        result.push(...useTemplate({ type, negation, property: key, values: [adjustValue(value)] }));
+                        result.push(...useTemplate({ type, negation, property: key, values: [escapeValue(value)] }));
                     }
                 });
             }
             return result;
         }
 
-    const adjustValues = (list: any[], value: any) => (list.push(adjustValue(value)), list);
+    const escapeValues = (list: any[], value: any) => (list.push(escapeValue(value)), list);
 
     const handleSingleValuedCondition = (type: QuerySyntaxEnum, negation: boolean, values: any[]) =>
         (parts: string[], key: PropertyOrLogicalOperatorScope): string[] => {
             if (isLogicalOperatorScope(key)) {
                 parts.push(...handleLogicalOperatorScope({ operator: key.type, condition: type, negation, properties: key.properties, values }));
             } else {
-                const parsedValues: any[] = values.reduce(adjustValues, [])
+                const parsedValues: any[] = values.reduce(escapeValues, [])
                 parts.push(...useTemplate({ type, negation, property: key, values: parsedValues }));
             }
             return parts;

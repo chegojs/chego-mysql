@@ -1,3 +1,4 @@
+import { Fn } from '@chego/chego-api';
 import { AnyButFunction, IQueryResult } from '@chego/chego-api';
 import * as mysql from 'mysql'
 
@@ -41,7 +42,7 @@ const beginTransaction = (connection: mysql.Connection, queries: IQuery[]) =>
             }
             connection.commit((error: mysql.MysqlError) => error
                 ? (connection.rollback(), reject(error))
-                : (connection.end(), resolve(result.getData()))
+                : resolve(result.getData())
             );
         });
     });
@@ -50,7 +51,7 @@ const verifyTransaction = (connection: mysql.Connection, error: mysql.MysqlError
     error ? (connection.rollback(), Promise.reject(error)) : Promise.resolve(result);
 
 const verifySingleQuery = (connection: mysql.Connection, error: mysql.MysqlError, result: any): Promise<any> =>
-    (connection.end(), error ? Promise.reject(error) : Promise.resolve(result));
+    error ? Promise.reject(error) : Promise.resolve(result);
 
 const executeQuery = (connection: mysql.Connection, query: IQuery, callback: (...args: any[]) => Promise<any>) =>
     new Promise((resolve, reject) => {
@@ -62,11 +63,11 @@ const executeQuery = (connection: mysql.Connection, query: IQuery, callback: (..
 
 export const chegoMySQL = (): IDatabaseDriver => {
     let initialized: boolean = false;
-    let driverConfig: Obj;
+    let connection:mysql.Connection;
 
     const driver = {
         initialize(config: any): IDatabaseDriver {
-            driverConfig = config;
+            connection = mysql.createConnection(config);
             initialized = true;
             return driver;
         },
@@ -74,14 +75,19 @@ export const chegoMySQL = (): IDatabaseDriver => {
             if (!initialized) {
                 throw new Error('Driver not initialized');
             }
-            const connection = mysql.createConnection(driverConfig);
 
             return ((queries.length > 1)
                 ? beginTransaction(connection, queries)
                 : executeQuery(connection, queries[0], verifySingleQuery))
                 .then(resolve)
                 .catch(reject);
-        })
+        }),
+        connect:(callback?:Fn):void => {
+            connection.connect(callback);
+        },
+        disconnect:(callback?:Fn):void => {
+            connection.end(callback);
+        }
     }
     return driver;
 }
