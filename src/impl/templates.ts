@@ -1,5 +1,4 @@
 import { QuerySyntaxEnum, AnyButFunction } from '@chego/chego-api';
-import { UnionTypes } from '../api/enums';
 import { MySQLSyntaxTemplate, MySQLSyntaxTemplateData } from '../api/types';
 
 const select:MySQLSyntaxTemplate = () => (...columns:string[]) => `SELECT ${columns.join(', ')}`
@@ -28,6 +27,7 @@ const lt:MySQLSyntaxTemplate = (data:MySQLSyntaxTemplateData) => (value: number 
 const isNull:MySQLSyntaxTemplate = (data:MySQLSyntaxTemplateData) => () => `${data.property} ${data.negation ? 'IS NOT NULL' : 'IS NULL'}`;
 const between:MySQLSyntaxTemplate = (data:MySQLSyntaxTemplateData) => (min: number, max: number) => `${data.property} ${ data.negation ? 'NOT BETWEEN' : 'BETWEEN'} ${min} AND ${max}`;
 const where:MySQLSyntaxTemplate = () => () => 'WHERE';
+const having:MySQLSyntaxTemplate = () => () => 'HAVING';
 const and:MySQLSyntaxTemplate = () => () => 'AND';
 const or:MySQLSyntaxTemplate = () => () => 'OR';
 const openParentheses:MySQLSyntaxTemplate = () => () => '(';
@@ -39,9 +39,12 @@ const leftJoin:MySQLSyntaxTemplate = () => (table:string) => `LEFT JOIN ${table}
 const rightJoin:MySQLSyntaxTemplate = () => (table:string) => `RIGHT JOIN ${table}`;
 const fullJoin:MySQLSyntaxTemplate = () => (table:string) => `FULL JOIN ${table}`;
 const on:MySQLSyntaxTemplate = () => (keyA:string, keyB:string) => `ON ${keyA} = ${keyB}`;
+const using:MySQLSyntaxTemplate = () => (key:string) => `USING(${key})`;
+const whereIn:MySQLSyntaxTemplate = () => (...keys:string[]) => `IN (${keys.join(',')})`;
 const limit:MySQLSyntaxTemplate = () => (a:number, b?:number) => `LIMIT ${b ? String(`${a}, ${b}`) : a}`;
-const like:MySQLSyntaxTemplate = (data:MySQLSyntaxTemplateData) => (expression:string) => `${ data.negation ? 'NOT LIKE' : 'LIKE' } ${expression}`;
-const union:MySQLSyntaxTemplate = () => (type:UnionTypes) => `UNION ${type ? UnionTypes[type] : ''}`;
+const like:MySQLSyntaxTemplate = (data:MySQLSyntaxTemplateData) => (expression:string) => `${data.property} ${ data.negation ? 'NOT LIKE' : 'LIKE' } ${expression}`;
+const union:MySQLSyntaxTemplate = () => (query:string) => `UNION ${query}`;
+const unionAll:MySQLSyntaxTemplate = () => (query:string) => `UNION ALL ${query}`;
 const exists:MySQLSyntaxTemplate = (data:MySQLSyntaxTemplateData) => (query:string) => `${ data.negation ? 'NOT EXISTS' : 'EXISTS'} ${query}`;
 const coalesce:MySQLSyntaxTemplate = () => (values:AnyButFunction[], alias?:string) => 
     `COALESCE(${values.join(', ')}) ${alias ? alias : ''}`;
@@ -83,6 +86,7 @@ export const templates:Map<QuerySyntaxEnum, MySQLSyntaxTemplate> = new Map<Query
     [QuerySyntaxEnum.Coalesce, coalesce],
     [QuerySyntaxEnum.Exists, exists],
     [QuerySyntaxEnum.Union, union],
+    [QuerySyntaxEnum.UnionAll, unionAll],
     [QuerySyntaxEnum.Like, like],
     [QuerySyntaxEnum.Limit, limit],
     [QuerySyntaxEnum.FullJoin, fullJoin],
@@ -97,4 +101,8 @@ export const templates:Map<QuerySyntaxEnum, MySQLSyntaxTemplate> = new Map<Query
     [QuerySyntaxEnum.To, to],
     [QuerySyntaxEnum.Where, where],
     [QuerySyntaxEnum.On, on],
+    [QuerySyntaxEnum.Using, using],
+    [QuerySyntaxEnum.Exists, exists],
+    [QuerySyntaxEnum.Having, having],
+    [QuerySyntaxEnum.In, whereIn],
 ]);

@@ -4,6 +4,7 @@ import { templates } from "./templates";
 import { QuerySyntaxEnum, PropertyOrLogicalOperatorScope, Property, Fn, Obj, Table } from "@chego/chego-api";
 import { parsePropertyToString, parseTableToString, escapeValue } from './utils';
 import { mergePropertiesWithLogicalAnd, isLogicalOperatorScope, newLogicalOperatorScope } from '@chego/chego-tools';
+import { validators } from './validators';
 
 export const newQueryBuilder = (): IQueryBuilder => {
     let keychain: PropertyOrLogicalOperatorScope[] = [];
@@ -41,8 +42,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const handleWhere = (type:QuerySyntaxEnum, params:any[]): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
         const penultimateType: QuerySyntaxEnum = history[history.length - 2];
-        const values: PropertyOrLogicalOperatorScope[] = params.reduce(mergePropertiesWithLogicalAnd, []);
-
+        const values: PropertyOrLogicalOperatorScope[] = params.reduce(mergePropertiesWithLogicalAnd, [])
         if (
             (previousType === QuerySyntaxEnum.And || previousType === QuerySyntaxEnum.Or)
             && penultimateType === QuerySyntaxEnum.Where
@@ -123,6 +123,37 @@ export const newQueryBuilder = (): IQueryBuilder => {
             if (templates.has(type)) {
                 query.push(templates.get(type)()([values]));
             }
+        }
+    }
+
+    const handleIn = (type:QuerySyntaxEnum, params:any[]) => {
+        const values: any[] = params.reduce(escapeValues, [])
+        query.push(...useTemplate({ type, values }));
+    }
+
+    const handleUnion = (type:QuerySyntaxEnum, params:any[]) => {
+        for(const param of params) {
+            query.push(...useTemplate({ type, values:[param] }));
+        }
+    }
+
+    const handleJoin = (type:QuerySyntaxEnum, params:any[]): void => {
+        const tables: string[] = params.reduce(parseTablesToStrings, []);
+        if (templates.has(type)) {
+            query.push(templates.get(type)()(tables));
+        }
+    }
+
+    const handleOn = (type:QuerySyntaxEnum, params:any[]): void => {
+        const keys: string[] = params.reduce((list:string[], prop:Property) => (list.push(parsePropertyToString(prop)),list), []);
+        if (templates.has(type)) {
+            query.push(templates.get(type)()(...keys));
+        }
+    }
+
+    const handleUsing = (type:QuerySyntaxEnum, params:any[]): void => {
+        if (templates.has(type)) {
+            query.push(templates.get(type)()(parsePropertyToString(params[0])));
         }
     }
 
@@ -224,20 +255,27 @@ export const newQueryBuilder = (): IQueryBuilder => {
         [QuerySyntaxEnum.To, handleTo],
         [QuerySyntaxEnum.Set, handleSet],
         [QuerySyntaxEnum.Exists, defaultHandle],
-        [QuerySyntaxEnum.Union, defaultHandle],
+        [QuerySyntaxEnum.Union, handleUnion],
+        [QuerySyntaxEnum.UnionAll, handleUnion],
         [QuerySyntaxEnum.OrderBy, defaultHandle],
         [QuerySyntaxEnum.GroupBy, defaultHandle],
-        [QuerySyntaxEnum.FullJoin, defaultHandle],
-        [QuerySyntaxEnum.LeftJoin, defaultHandle],
-        [QuerySyntaxEnum.RightJoin, defaultHandle],
-        [QuerySyntaxEnum.Join, defaultHandle],
-        [QuerySyntaxEnum.On, defaultHandle],
+        [QuerySyntaxEnum.FullJoin, handleJoin],
+        [QuerySyntaxEnum.LeftJoin, handleJoin],
+        [QuerySyntaxEnum.RightJoin, handleJoin],
+        [QuerySyntaxEnum.Join, handleJoin],
+        [QuerySyntaxEnum.On, handleOn],
+        [QuerySyntaxEnum.Using, handleUsing],
+        [QuerySyntaxEnum.Having, defaultHandle],
+        [QuerySyntaxEnum.In, handleIn],
         [QuerySyntaxEnum.Limit, defaultHandle],
     ]);
 
     const builder:IQueryBuilder = {
         with: (type:QuerySyntaxEnum,params:any[]): void => {
             const handle = handles.get(type);
+            if (validators.has(type)) {
+                validators.get(type)(...params);
+            }
             if (handle) {
                 handle(type, params);
             }

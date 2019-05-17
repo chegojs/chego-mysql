@@ -1,7 +1,7 @@
 import { Property, Table } from "@chego/chego-api";
 import * as mysql from 'mysql'
 
-export const parsePropertyToString = (property: Property, useAlias?: boolean): string =>
+export const parsePropertyToString = (property: Property, useAlias: boolean = true): string =>
     useAlias && property.alias
         ? property.alias
         : property.table
