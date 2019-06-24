@@ -8,7 +8,7 @@ import { validators } from './validators';
 
 export const newQueryBuilder = (): IQueryBuilder => {
     let keychain: PropertyOrLogicalOperatorScope[] = [];
-    const query: string[] = [];
+    const query: any[] = [];
     const history: QuerySyntaxEnum[] = [];
 
     const handleSelect = (type: QuerySyntaxEnum, params: any[]): void => {
@@ -171,11 +171,19 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
+    const injectOperator = (operator:string) => (result: string[], condition: string, i:number): string[] => {
+        if(i > 0) {
+            result.push(operator);
+        }
+        result.push(condition);
+        return result;
+    }
+
     const handleLogicalOperatorScope = (data: LogicalOperatorHandleData): string[] => {
         const conditionHandle: Fn<any> = isMultiValuedCondition(data.condition, data.values) ? handleMultiValuedCondition : handleSingleValuedCondition;
-        return (templates.has(data.operator))
-            ? [templates.get(data.operator)()(), ...data.properties.reduce(conditionHandle(data.condition, data.negation, data.values), [])]
-            : [];
+        const conditions:any[] = data.properties.reduce(conditionHandle(data.condition, data.negation, data.values), []);
+        const operatorTemplate:string = templates.get(data.operator)()();
+        return conditions.reduce(injectOperator(operatorTemplate), []);
     }
 
     const useTemplate = ({ type, negation, property, values }: UseTemplateData): string[] => {
@@ -186,15 +194,15 @@ export const newQueryBuilder = (): IQueryBuilder => {
     }
 
     const handleMultiValuedCondition = (type: QuerySyntaxEnum, negation: boolean, values: any[]) =>
-        (result: string[], key: PropertyOrLogicalOperatorScope): string[] => {
+        (result: any[], key: PropertyOrLogicalOperatorScope): string[] => {
             if (isLogicalOperatorScope(key)) {
-                result.push(...handleLogicalOperatorScope({ operator: key.type, condition: type, negation, properties: key.properties, values }));
+                result.push(handleLogicalOperatorScope({ operator: key.type, condition: type, negation, properties: key.properties, values }));
             } else {
                 values.forEach((value: any) => {
                     if (isLogicalOperatorScope(value)) {
-                        result.push(...handleLogicalOperatorScope({ operator: value.type, condition: type, negation, properties: [key], values: value.properties }));
+                        result.push(handleLogicalOperatorScope({ operator: value.type, condition: type, negation, properties: [key], values: value.properties }));
                     } else {
-                        result.push(...useTemplate({ type, negation, property: key, values: [escapeValue(value)] }));
+                        result.push(...useTemplate({ type, negation, property: key, values: [escapeValue(parsePropertyToString(value))] }));
                     }
                 });
             }
@@ -215,7 +223,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
 
     const isMultiValuedCondition = (type: QuerySyntaxEnum, values: any[]): boolean =>
-        values.length > 1
+        (values.length > 1 || isLogicalOperatorScope(values[0]))
         && (
             type === QuerySyntaxEnum.EQ
             || type === QuerySyntaxEnum.GT
@@ -228,14 +236,23 @@ export const newQueryBuilder = (): IQueryBuilder => {
 
         if (isMultiValuedCondition(type, params)) {
             const values: PropertyOrLogicalOperatorScope[] = params.reduce(mergePropertiesWithLogicalAnd, []);
-            query.push(keychain.reduce(handleMultiValuedCondition(type, isNegation, values), []).join(' '));
+            query.push(keychain.reduce(handleMultiValuedCondition(type, isNegation, values), []));
         } else {
-            query.push(keychain.reduce(handleSingleValuedCondition(type, isNegation, params), []).join(' '));
+            query.push(keychain.reduce(handleSingleValuedCondition(type, isNegation, params), []));
         }
     }
 
     const defaultHandle = (type: QuerySyntaxEnum, params: any[]) => {
         query.push(...useTemplate({ type, values: params }));
+    }
+
+    const buildQuery = (query:string[], current:any):string[] => {
+        if(Array.isArray(current)) {
+            query.push(...current.reduce(buildQuery, []));
+        } else {
+            query.push(current);
+        }
+        return query;
     }
 
     const handles = new Map<QuerySyntaxEnum, QueryBuilderHandle>([
@@ -284,7 +301,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
             }
             history.push(type);
         },
-        build: (): string => query.join(' ')
+        build: (): string => query.reduce(buildQuery, []).join(' ')
     }
     return builder;
 }
