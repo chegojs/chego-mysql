@@ -17,7 +17,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
             const selection: string = (params.length === 0)
                 ? '*'
                 : params.reduce((result: string[], current: Property) => {
-                    const key = parsePropertyToString(current);
+                    const key = parsePropertyToString(current, false);
                     result.push(current.alias ? `${key} AS ${current.alias}` : key)
                     return result;
                 }, []).join(', ');

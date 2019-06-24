@@ -1,8 +1,8 @@
-import { Property, Table } from "@chego/chego-api";
+import { Property, Table, QuerySyntaxEnum } from "@chego/chego-api";
 import * as mysql from 'mysql'
 
 export const parsePropertyToString = (property: Property, useAlias: boolean = true): string =>
-    useAlias && property.alias
+    (useAlias && property.alias && property.type !== QuerySyntaxEnum.Alias)
         ? property.alias
         : property.table
             ? `${property.table.name}.${property.name}`
