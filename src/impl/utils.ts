@@ -13,11 +13,11 @@ export const parseTableToString = (table: Table, useAlias?: boolean): string =>
         ? table.alias
         : table.name;
 
-export const parsePropertyToEquation = (properties:any) => (list:string[], key:string) => 
-(list.push(`${key} = ${properties[key]}`), list);
+export const parsePropertyToEquation = (properties: any) => (list: string[], key: string) =>
+    (list.push(`${key} = ${properties[key]}`), list);
 
-export const escapeValue = (value:any):any => {
-    if(typeof value === 'string') {
+export const escapeValue = (value: any): any => {
+    if (typeof value === 'string') {
         return mysql.escape(value);
     }
     return value;

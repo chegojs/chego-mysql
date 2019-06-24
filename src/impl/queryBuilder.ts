@@ -11,7 +11,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const query: string[] = [];
     const history: QuerySyntaxEnum[] = [];
 
-    const handleSelect = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleSelect = (type: QuerySyntaxEnum, params: any[]): void => {
         const template: MySQLSyntaxTemplate = templates.get(QuerySyntaxEnum.Select);
         if (template) {
             const selection: string = (params.length === 0)
@@ -26,7 +26,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
-    const handleFrom = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleFrom = (type: QuerySyntaxEnum, params: any[]): void => {
         const template: MySQLSyntaxTemplate = templates.get(QuerySyntaxEnum.From);
         if (template) {
             const tables: string = params.reduce((result: string[], current: Property) => {
@@ -39,7 +39,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
-    const handleWhere = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleWhere = (type: QuerySyntaxEnum, params: any[]): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
         const penultimateType: QuerySyntaxEnum = history[history.length - 2];
         const values: PropertyOrLogicalOperatorScope[] = params.reduce(mergePropertiesWithLogicalAnd, [])
@@ -60,15 +60,17 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
-    const addMissingKey = (list: string[]) => (key: string) => {
-        if (list.indexOf(key) === -1) {
-            list.push(key);
+    const getUnifiedKeysList = (objects: Obj[]): string[] => {
+        const list: string[] = [];
+        for (const obj of objects) {
+            for (const key of Object.keys(obj)) {
+                if (list.indexOf(key) === -1) {
+                    list.push(key);
+                }
+            }
         }
+        return list;
     }
-
-    const getUnifiedKeysList = (objects: Obj[]): string[] =>
-        objects.reduce((keys: string[], item: Obj) =>
-            (Object.keys(item).forEach(addMissingKey(keys)), keys), []);
 
     const addEmptyProperty = (item: Obj) => (key: string) => {
         if (!item.hasOwnProperty(key)) {
@@ -77,18 +79,19 @@ export const newQueryBuilder = (): IQueryBuilder => {
     }
 
     const addEmptyMissingProperties = (keys: string[]) =>
-        (items: Obj[], item: Obj): Obj[] => (keys.forEach(addEmptyProperty(item)), [...items, item]);
+        (items: any[], item: any): any[] => (keys.forEach(addEmptyProperty(item)), [...items, item]);
 
-    const prepareInsertValuesList = (result: any[], item: any): any[] => {
-        const values: any[] = Object.values(item).reduce(escapeValues, <any>[]);
-        result.push(`(${values.join(', ')})`)
+    const prepareInsertValuesList = (result: string[], item: Obj): string[] => {
+        const values: any[] = Object.values(item).reduce(escapeValues, []);
+        result.push(`(${values.join(', ')})`);
         return result;
     }
 
-    const handleInsert = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleInsert = (type: QuerySyntaxEnum, params: any[]): void => {
         const keys: string[] = getUnifiedKeysList(params);
-        const items: Obj[] = params.reduce(addEmptyMissingProperties(keys), []);
+        const items: any[] = params.reduce(addEmptyMissingProperties(keys), []);
         const values: string[] = items.reduce(prepareInsertValuesList, []);
+
         if (templates.has(type)) {
             query.push(templates.get(type)()(keys, values));
         }
@@ -96,7 +99,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
 
     const parseTablesToStrings = (list: string[], table: Table) => (list.push(parseTableToString(table)), list);
 
-    const handleTo = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleTo = (type: QuerySyntaxEnum, params: any[]): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
         if (previousType === QuerySyntaxEnum.Insert) {
             const tables: string[] = params.reduce(parseTablesToStrings, []);
@@ -106,7 +109,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
-    const handleUpdate = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleUpdate = (type: QuerySyntaxEnum, params: any[]): void => {
         const tables: string[] = params.reduce(parseTablesToStrings, []);
         if (templates.has(type)) {
             query.push(templates.get(type)()(tables));
@@ -116,7 +119,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const prepareSetValues = (properties: Obj) => (list: string[], key: string): string[] =>
         (list.push(`${key} = ${escapeValue(properties[key])}`), list);
 
-    const handleSet = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleSet = (type: QuerySyntaxEnum, params: any[]): void => {
         const properties: Obj = params[0];
         if (properties) {
             const values: string[] = Object.keys(properties).reduce(prepareSetValues(properties), []);
@@ -126,38 +129,38 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
-    const handleIn = (type:QuerySyntaxEnum, params:any[]) => {
+    const handleIn = (type: QuerySyntaxEnum, params: any[]) => {
         const values: any[] = params.reduce(escapeValues, [])
         query.push(...useTemplate({ type, values }));
     }
 
-    const handleUnion = (type:QuerySyntaxEnum, params:any[]) => {
-        for(const param of params) {
-            query.push(...useTemplate({ type, values:[param] }));
+    const handleUnion = (type: QuerySyntaxEnum, params: any[]) => {
+        for (const param of params) {
+            query.push(...useTemplate({ type, values: [param] }));
         }
     }
 
-    const handleJoin = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleJoin = (type: QuerySyntaxEnum, params: any[]): void => {
         const tables: string[] = params.reduce(parseTablesToStrings, []);
         if (templates.has(type)) {
             query.push(templates.get(type)()(tables));
         }
     }
 
-    const handleOn = (type:QuerySyntaxEnum, params:any[]): void => {
-        const keys: string[] = params.reduce((list:string[], prop:Property) => (list.push(parsePropertyToString(prop)),list), []);
+    const handleOn = (type: QuerySyntaxEnum, params: any[]): void => {
+        const keys: string[] = params.reduce((list: string[], prop: Property) => (list.push(parsePropertyToString(prop)), list), []);
         if (templates.has(type)) {
             query.push(templates.get(type)()(...keys));
         }
     }
 
-    const handleUsing = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleUsing = (type: QuerySyntaxEnum, params: any[]): void => {
         if (templates.has(type)) {
             query.push(templates.get(type)()(parsePropertyToString(params[0])));
         }
     }
 
-    const handleLogicalOperator = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleLogicalOperator = (type: QuerySyntaxEnum, params: any[]): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
         if (previousType === QuerySyntaxEnum.Where) {
             keychain.push(newLogicalOperatorScope(type));
@@ -169,7 +172,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     }
 
     const handleLogicalOperatorScope = (data: LogicalOperatorHandleData): string[] => {
-        const conditionHandle: Fn = isMultiValuedCondition(data.condition, data.values) ? handleMultiValuedCondition : handleSingleValuedCondition;
+        const conditionHandle: Fn<any> = isMultiValuedCondition(data.condition, data.values) ? handleMultiValuedCondition : handleSingleValuedCondition;
         return (templates.has(data.operator))
             ? [templates.get(data.operator)()(), ...data.properties.reduce(conditionHandle(data.condition, data.negation, data.values), [])]
             : [];
@@ -178,7 +181,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
     const useTemplate = ({ type, negation, property, values }: UseTemplateData): string[] => {
         const key: string = property ? parsePropertyToString(property, true) : null;
         return (templates.has(type))
-            ? [templates.get(type)({negation, property:key})(...values)]
+            ? [templates.get(type)({ negation, property: key })(...values)]
             : [];
     }
 
@@ -219,7 +222,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
             || type === QuerySyntaxEnum.LT
             || type === QuerySyntaxEnum.Like);
 
-    const handleCondition = (type:QuerySyntaxEnum, params:any[]): void => {
+    const handleCondition = (type: QuerySyntaxEnum, params: any[]): void => {
         const previousType: QuerySyntaxEnum = history[history.length - 1];
         const isNegation: boolean = previousType === QuerySyntaxEnum.Not;
 
@@ -231,7 +234,7 @@ export const newQueryBuilder = (): IQueryBuilder => {
         }
     }
 
-    const defaultHandle = (type:QuerySyntaxEnum, params:any[]) => {
+    const defaultHandle = (type: QuerySyntaxEnum, params: any[]) => {
         query.push(...useTemplate({ type, values: params }));
     }
 
@@ -270,8 +273,8 @@ export const newQueryBuilder = (): IQueryBuilder => {
         [QuerySyntaxEnum.Limit, defaultHandle],
     ]);
 
-    const builder:IQueryBuilder = {
-        with: (type:QuerySyntaxEnum,params:any[]): void => {
+    const builder: IQueryBuilder = {
+        with: (type: QuerySyntaxEnum, params: any[]): void => {
             const handle = handles.get(type);
             if (validators.has(type)) {
                 validators.get(type)(...params);
