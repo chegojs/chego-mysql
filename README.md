@@ -20,8 +20,11 @@ const chego = newChego(chegoMySQL, {
   database : 'some_db'
 });
 
-chego.connect();
+...
+
 const query = newQuery();
+
+await chego.connect();
 
 query.select('*').from('superheroes').where('origin').is.eq('Gotham City').limit(10);
 
@@ -34,6 +37,8 @@ chego.execute(query)
     console.log('ERROR:', error); 
     chego.disconnect();
 });
+
+...
 
 ```
 
