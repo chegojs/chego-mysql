@@ -1,217 +1,217 @@
 import { QuerySyntaxEnum, AnyButFunction } from '@chego/chego-api';
-import { MySQLSyntaxTemplate, MySQLSyntaxTemplateData } from '../api/types';
+import { SQLSyntaxTemplate, SQLSyntaxTemplateData } from '@chego/chego-database-boilerplate';
 
-const select: MySQLSyntaxTemplate = () => (...columns: string[]) =>
+const select: SQLSyntaxTemplate = () => (...columns: string[]) =>
     `SELECT ${columns.join(', ')}`
 
-const insert: MySQLSyntaxTemplate = () => (keys: string[], values: string[]) =>
+const insert: SQLSyntaxTemplate = () => (keys: string[], values: string[]) =>
     `(${keys.join(', ')}) VALUES ${values.join(', ')}`
 
-const to: MySQLSyntaxTemplate = () => (table: string) =>
+const to: SQLSyntaxTemplate = () => (table: string) =>
     `INSERT INTO ${table}`
 
-const update: MySQLSyntaxTemplate = () => (table: string) =>
+const update: SQLSyntaxTemplate = () => (table: string) =>
     `UPDATE ${table}`;
 
-const set: MySQLSyntaxTemplate = () => (properties: any) =>
+const set: SQLSyntaxTemplate = () => (properties: any) =>
     `SET ${properties}`;
 
-const remove: MySQLSyntaxTemplate = () => () => 'DELETE';
+const remove: SQLSyntaxTemplate = () => () => 'DELETE';
 
-const from: MySQLSyntaxTemplate = () => (table: string) =>
+const from: SQLSyntaxTemplate = () => (table: string) =>
     `FROM ${table}`;
 
-const eq: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => (value: number | string) =>
+const eq: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => (value: number | string) =>
     `${data.property} ${data.negation ? '!=' : '='} ${value}`;
 
-const gt: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => (value: number | string) =>
+const gt: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => (value: number | string) =>
     `${data.property} ${data.negation ? '<=' : '>'} ${value}`;
 
-const lt: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => (value: number | string) =>
+const lt: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => (value: number | string) =>
     `${data.property} ${data.negation ? '>=' : '<'} ${value}`;
 
-const isNull: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => () =>
+const isNull: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => () =>
     `${data.property} ${data.negation ? 'IS NOT NULL' : 'IS NULL'}`;
-const between: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => (min: number, max: number) =>
+const between: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => (min: number, max: number) =>
     `${data.property} ${data.negation ? 'NOT BETWEEN' : 'BETWEEN'} ${min} AND ${max}`;
-const where: MySQLSyntaxTemplate = () => () => 'WHERE';
-const having: MySQLSyntaxTemplate = () => () => 'HAVING';
-const and: MySQLSyntaxTemplate = () => () => 'AND';
-const or: MySQLSyntaxTemplate = () => () => 'OR';
-const openParentheses: MySQLSyntaxTemplate = () => () => '(';
-const closeParentheses: MySQLSyntaxTemplate = () => () => ')';
-const orderBy: MySQLSyntaxTemplate = () => (...sorting: string[]) =>
+const where: SQLSyntaxTemplate = () => () => 'WHERE';
+const having: SQLSyntaxTemplate = () => () => 'HAVING';
+const and: SQLSyntaxTemplate = () => () => 'AND';
+const or: SQLSyntaxTemplate = () => () => 'OR';
+const openParentheses: SQLSyntaxTemplate = () => () => '(';
+const closeParentheses: SQLSyntaxTemplate = () => () => ')';
+const orderBy: SQLSyntaxTemplate = () => (...sorting: string[]) =>
     `ORDER BY ${sorting.join(', ')}`;
-const groupBy: MySQLSyntaxTemplate = () => (...sorting: string[]) =>
+const groupBy: SQLSyntaxTemplate = () => (...sorting: string[]) =>
     `GROUP BY ${sorting.join(', ')}`;
-const join: MySQLSyntaxTemplate = () => (table: string) =>
+const join: SQLSyntaxTemplate = () => (table: string) =>
     `INNER JOIN ${table}`;
-const leftJoin: MySQLSyntaxTemplate = () => (table: string) =>
+const leftJoin: SQLSyntaxTemplate = () => (table: string) =>
     `LEFT JOIN ${table}`;
-const rightJoin: MySQLSyntaxTemplate = () => (table: string) =>
+const rightJoin: SQLSyntaxTemplate = () => (table: string) =>
     `RIGHT JOIN ${table}`;
-const fullJoin: MySQLSyntaxTemplate = () => (table: string) =>
+const fullJoin: SQLSyntaxTemplate = () => (table: string) =>
     `FULL JOIN ${table}`;
-const on: MySQLSyntaxTemplate = () => (keyA: string, keyB: string) =>
+const on: SQLSyntaxTemplate = () => (keyA: string, keyB: string) =>
     `ON ${keyA} = ${keyB}`;
-const using: MySQLSyntaxTemplate = () => (key: string) =>
+const using: SQLSyntaxTemplate = () => (key: string) =>
     `USING(${key})`;
-const whereIn: MySQLSyntaxTemplate = () => (...keys: string[]) =>
+const whereIn: SQLSyntaxTemplate = () => (...keys: string[]) =>
     `IN (${keys.join(',')})`;
-const limit: MySQLSyntaxTemplate = () => (a: number, b?: number) =>
+const limit: SQLSyntaxTemplate = () => (a: number, b?: number) =>
     `LIMIT ${b ? String(`${a}, ${b}`) : a}`;
-const like: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => (expression: string) =>
+const like: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => (expression: string) =>
     `${data.property} ${data.negation ? 'NOT LIKE' : 'LIKE'} ${expression}`;
-const union: MySQLSyntaxTemplate = () => (query: string) =>
+const union: SQLSyntaxTemplate = () => (query: string) =>
     `UNION ${query}`;
-const unionAll: MySQLSyntaxTemplate = () => (query: string) =>
+const unionAll: SQLSyntaxTemplate = () => (query: string) =>
     `UNION ALL ${query}`;
-const exists: MySQLSyntaxTemplate = (data: MySQLSyntaxTemplateData) => (query: string) =>
+const exists: SQLSyntaxTemplate = (data: SQLSyntaxTemplateData) => (query: string) =>
     `${data.negation ? 'NOT EXISTS' : 'EXISTS'} ${query}`;
-const coalesce: MySQLSyntaxTemplate = () => (values: AnyButFunction[], alias?: string) =>
+const coalesce: SQLSyntaxTemplate = () => (values: AnyButFunction[], alias?: string) =>
     `COALESCE(${values.join(', ')}) ${alias ? alias : ''}`;
-const greatest: MySQLSyntaxTemplate = () => (values: AnyButFunction[], alias?: string) =>
+const greatest: SQLSyntaxTemplate = () => (values: AnyButFunction[], alias?: string) =>
     `GREATEST(${values.join(', ')}) ${alias ? alias : ''}`;
-const least: MySQLSyntaxTemplate = () => (values: AnyButFunction[], alias?: string) =>
+const least: SQLSyntaxTemplate = () => (values: AnyButFunction[], alias?: string) =>
     `LEAST(${values.join(', ')}) ${alias ? alias : ''}`;
-const min: MySQLSyntaxTemplate = () => (expression: string, alias?: string) =>
+const min: SQLSyntaxTemplate = () => (expression: string, alias?: string) =>
     `MIN(${expression}) ${alias ? alias : ''}`;
-const max: MySQLSyntaxTemplate = () => (expression: string, alias?: string) =>
+const max: SQLSyntaxTemplate = () => (expression: string, alias?: string) =>
     `MAX(${expression}) ${alias ? alias : ''}`;
-const sum: MySQLSyntaxTemplate = () => (expression: string, alias?: string) =>
+const sum: SQLSyntaxTemplate = () => (expression: string, alias?: string) =>
     `SUM(${expression}) ${alias ? alias : ''}`;
-const avg: MySQLSyntaxTemplate = () => (expression: string, alias?: string) =>
+const avg: SQLSyntaxTemplate = () => (expression: string, alias?: string) =>
     `AVG(${expression}) ${alias ? alias : ''}`;
-const sqrt: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const sqrt: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `SQRT(${value}) ${alias ? alias : ''}`;
-const pow: MySQLSyntaxTemplate = () => (value: number, exponent: number, alias?: string) =>
+const pow: SQLSyntaxTemplate = () => (value: number, exponent: number, alias?: string) =>
     `POW(${value},${exponent}) ${alias ? alias : ''}`;
-const count: MySQLSyntaxTemplate = () => (expression: string, alias?: string) =>
+const count: SQLSyntaxTemplate = () => (expression: string, alias?: string) =>
     `COUNT(${expression}) ${alias ? alias : ''}`;
-const ascii: MySQLSyntaxTemplate = () => (expression: string, alias?: string) =>
+const ascii: SQLSyntaxTemplate = () => (expression: string, alias?: string) =>
     `ASCII(${expression}) ${alias ? alias : ''}`;
-const asin: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const asin: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `ASIN(${expression}) ${alias ? alias : ''}`;
-const atan: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const atan: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `ATAN(${expression}) ${alias ? alias : ''}`;
-const atan2: MySQLSyntaxTemplate = () => (a: string | number, b: string | number, alias?: string) =>
+const atan2: SQLSyntaxTemplate = () => (a: string | number, b: string | number, alias?: string) =>
     `ATAN2(${a},${b}) ${alias ? alias : ''}`;
-const ceil: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const ceil: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `CEIL(${expression}) ${alias ? alias : ''}`;
-const cos: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const cos: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `COS(${expression}) ${alias ? alias : ''}`;
-const cot: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const cot: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `COT(${expression}) ${alias ? alias : ''}`;
-const degrees: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const degrees: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `DEGREES(${expression}) ${alias ? alias : ''}`;
-const div: MySQLSyntaxTemplate = () => (a: string | number, b: string | number, alias?: string) =>
+const div: SQLSyntaxTemplate = () => (a: string | number, b: string | number, alias?: string) =>
     `${a} DIV ${b} ${alias ? 'AS ' + alias : ''}`;
-const exp: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const exp: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `EXP(${expression}) ${alias ? alias : ''}`;
-const floor: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const floor: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `FLOOR(${expression}) ${alias ? alias : ''}`;
-const ln: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const ln: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `LN(${expression}) ${alias ? alias : ''}`;
-const log: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const log: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `LOG(${expression}) ${alias ? alias : ''}`;
-const log2: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const log2: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `LOG2(${expression}) ${alias ? alias : ''}`;
-const log10: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const log10: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `LOG10(${expression}) ${alias ? alias : ''}`;
-const mod: MySQLSyntaxTemplate = () => (a: string | number, b: string | number, alias?: string) =>
+const mod: SQLSyntaxTemplate = () => (a: string | number, b: string | number, alias?: string) =>
     `MOD(${a},${b}) ${alias ? alias : ''}`;
-const pi: MySQLSyntaxTemplate = () => (alias?: string) =>
+const pi: SQLSyntaxTemplate = () => (alias?: string) =>
     `PI() ${alias ? alias : ''}`;
-const radians: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const radians: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `RADIANS(${expression}) ${alias ? alias : ''}`;
-const rand: MySQLSyntaxTemplate = () => (alias?: string) =>
+const rand: SQLSyntaxTemplate = () => (alias?: string) =>
     `RAND() ${alias ? alias : ''}`;
-const round: MySQLSyntaxTemplate = () => (value: string | number, decimals: string | number, alias?: string) =>
+const round: SQLSyntaxTemplate = () => (value: string | number, decimals: string | number, alias?: string) =>
     `ROUND(${value},${decimals}) ${alias ? alias : ''}`;
-const sign: MySQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
+const sign: SQLSyntaxTemplate = () => (expression: string | number, alias?: string) =>
     `SIGN(${expression}) ${alias ? alias : ''}`;
-const sin: MySQLSyntaxTemplate = () => (value: string | number, alias?: string) =>
+const sin: SQLSyntaxTemplate = () => (value: string | number, alias?: string) =>
     `SIN(${value}) ${alias ? alias : ''}`;
-const tan: MySQLSyntaxTemplate = () => (value: string | number, alias?: string) =>
+const tan: SQLSyntaxTemplate = () => (value: string | number, alias?: string) =>
     `TAN(${value}) ${alias ? alias : ''}`;
-const truncate: MySQLSyntaxTemplate = () => (value: string | number, decimals: string | number, alias?: string) =>
+const truncate: SQLSyntaxTemplate = () => (value: string | number, decimals: string | number, alias?: string) =>
     `TRUNCATE(${value},${decimals}) ${alias ? alias : ''}`;
-const bin: MySQLSyntaxTemplate = () => (value: string | number, alias?: string) =>
+const bin: SQLSyntaxTemplate = () => (value: string | number, alias?: string) =>
     `BIN(${value}) ${alias ? alias : ''}`;
-const binary: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const binary: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `BINARY "${value}" ${alias ? alias : ''}`;
-const castAsBinary: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsBinary: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS BINARY) ${alias ? alias : ''}`;
-const castAsChar: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsChar: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS CHAR) ${alias ? alias : ''}`;
-const castAsDate: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsDate: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS DATE) ${alias ? alias : ''}`;
-const castAsDatetime: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsDatetime: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS DATETIME) ${alias ? alias : ''}`;
-const castAsTime: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsTime: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS TIME) ${alias ? alias : ''}`;
-const castAsSigned: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsSigned: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS SIGNED) ${alias ? alias : ''}`;
-const castAsUnsigned: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const castAsUnsigned: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `CAST(${value} AS UNSIGNED) ${alias ? alias : ''}`;
-const charLength: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const charLength: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `CHAR_LENGTH(${value}) ${alias ? alias : ''}`;
-const concat: MySQLSyntaxTemplate = () => (values: string[], alias?: string) =>
+const concat: SQLSyntaxTemplate = () => (values: string[], alias?: string) =>
     `CONCAT(${values.join(',')}) ${alias ? alias : ''}`;
-const concatWs: MySQLSyntaxTemplate = () => (separator: string, values: string[], alias?: string) =>
+const concatWs: SQLSyntaxTemplate = () => (separator: string, values: string[], alias?: string) =>
     `CONCAT_WS(${separator},${values.join(',')}) ${alias ? alias : ''}`;
-const field: MySQLSyntaxTemplate = () => (search: string, values: string[], alias?: string) =>
+const field: SQLSyntaxTemplate = () => (search: string, values: string[], alias?: string) =>
     `FIELD(${search},${values.join(',')}) ${alias ? alias : ''}`;
-const findInSet: MySQLSyntaxTemplate = () => (search: string, value: string, alias?: string) =>
+const findInSet: SQLSyntaxTemplate = () => (search: string, value: string, alias?: string) =>
     `FIND_IN_SET(${search},${value}) ${alias ? alias : ''}`;
-const format: MySQLSyntaxTemplate = () => (value: string | number, decimals: string | number, alias?: string) =>
+const format: SQLSyntaxTemplate = () => (value: string | number, decimals: string | number, alias?: string) =>
     `FORMAT(${value},${decimals}) ${alias ? alias : ''}`;
-const insertString: MySQLSyntaxTemplate = () => (value: string, start: number, length: number, value2: string, alias?: string) =>
+const insertString: SQLSyntaxTemplate = () => (value: string, start: number, length: number, value2: string, alias?: string) =>
     `INSERT(${value},${start},${length},${value2}) ${alias ? alias : ''}`;
-const instr: MySQLSyntaxTemplate = () => (value: string, value2: string, alias?: string) =>
+const instr: SQLSyntaxTemplate = () => (value: string, value2: string, alias?: string) =>
     `INSTR(${value},${value2}) ${alias ? alias : ''}`;
-const lcase: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const lcase: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `LCASE(${value}) ${alias ? alias : ''}`;
-const ucase: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const ucase: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `UCASE(${value}) ${alias ? alias : ''}`;
-const lTrim: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const lTrim: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `LTRIM(${value}) ${alias ? alias : ''}`;
-const rTrim: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const rTrim: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `RTRIM(${value}) ${alias ? alias : ''}`;
-const trim: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const trim: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `TRIM(${value}) ${alias ? alias : ''}`;
-const left: MySQLSyntaxTemplate = () => (value: string, length: number, alias?: string) =>
+const left: SQLSyntaxTemplate = () => (value: string, length: number, alias?: string) =>
     `LEFT(${value},${length}) ${alias ? alias : ''}`;
-const right: MySQLSyntaxTemplate = () => (value: string, length: number, alias?: string) =>
+const right: SQLSyntaxTemplate = () => (value: string, length: number, alias?: string) =>
     `RIGHT(${value},${length}) ${alias ? alias : ''}`;
-const length: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const length: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `LENGTH(${value}) ${alias ? alias : ''}`;
-const locate: MySQLSyntaxTemplate = () => (search: string, value: string, start?: number, alias?: string) =>
+const locate: SQLSyntaxTemplate = () => (search: string, value: string, start?: number, alias?: string) =>
     `LOCATE(${search},${value}${start ? ',' + start : ''}) ${alias ? alias : ''}`;
-const position: MySQLSyntaxTemplate = () => (value: string, value2: string, alias?: string) =>
+const position: SQLSyntaxTemplate = () => (value: string, value2: string, alias?: string) =>
     `POSITION(${value} IN ${value2}) ${alias ? alias : ''}`;
-const repeat: MySQLSyntaxTemplate = () => (value: string | number, decimals: number, alias?: string) =>
+const repeat: SQLSyntaxTemplate = () => (value: string | number, decimals: number, alias?: string) =>
     `REPEAT(${value},${decimals}) ${alias ? alias : ''}`;
-const replace: MySQLSyntaxTemplate = () => (value: string, from: string, to: string, alias?: string) =>
+const replace: SQLSyntaxTemplate = () => (value: string, from: string, to: string, alias?: string) =>
     `REPALCE(${value},${from},${to}) ${alias ? alias : ''}`;
-const reverse: MySQLSyntaxTemplate = () => (value: string, alias?: string) =>
+const reverse: SQLSyntaxTemplate = () => (value: string, alias?: string) =>
     `REVERSE(${value}) ${alias ? alias : ''}`;
-const rPad: MySQLSyntaxTemplate = () => (value: string, length: number, value2: string, alias?: string) =>
+const rPad: SQLSyntaxTemplate = () => (value: string, length: number, value2: string, alias?: string) =>
     `RPAD(${value},${length},${value2}) ${alias ? alias : ''}`;
-const lPad: MySQLSyntaxTemplate = () => (value: string, length: number, value2: string, alias?: string) =>
+const lPad: SQLSyntaxTemplate = () => (value: string, length: number, value2: string, alias?: string) =>
     `LPAD(${value},${length},${value2}) ${alias ? alias : ''}`;
-const space: MySQLSyntaxTemplate = () => (value: number, alias?: string) =>
+const space: SQLSyntaxTemplate = () => (value: number, alias?: string) =>
     `SPACE(${value}) ${alias ? alias : ''}`;
-const mid: MySQLSyntaxTemplate = () => (value: string, start: number, length: number, alias?: string) =>
+const mid: SQLSyntaxTemplate = () => (value: string, start: number, length: number, alias?: string) =>
     `MID(${value},${start},${length}) ${alias ? alias : ''}`;
-const strcmp: MySQLSyntaxTemplate = () => (value: string, value2: string, alias?: string) =>
+const strcmp: SQLSyntaxTemplate = () => (value: string, value2: string, alias?: string) =>
     `STRCMP(${value},${value2}) ${alias ? alias : ''}`;
-const substr: MySQLSyntaxTemplate = () => (value: string, start: number, length: number, alias?: string) =>
+const substr: SQLSyntaxTemplate = () => (value: string, start: number, length: number, alias?: string) =>
     `SUBSTR(${value},${start},${length}) ${alias ? alias : ''}`;
-const substringIndex: MySQLSyntaxTemplate = () => (value: string, delimiter: string, length: number, alias?: string) =>
+const substringIndex: SQLSyntaxTemplate = () => (value: string, delimiter: string, length: number, alias?: string) =>
     `SUBSTRING_INDEX(${value},${delimiter},${length}) ${alias ? alias : ''}`;
 
-export const templates: Map<QuerySyntaxEnum, MySQLSyntaxTemplate> = new Map<QuerySyntaxEnum, MySQLSyntaxTemplate>([
+export const templates: Map<QuerySyntaxEnum, SQLSyntaxTemplate> = new Map<QuerySyntaxEnum, SQLSyntaxTemplate>([
     [QuerySyntaxEnum.Select, select],
     [QuerySyntaxEnum.Update, update],
     [QuerySyntaxEnum.Set, set],

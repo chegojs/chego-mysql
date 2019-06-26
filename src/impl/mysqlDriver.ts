@@ -1,6 +1,40 @@
 import * as mysql from 'mysql'
-import { IDatabaseDriver, IQuery } from '@chego/chego-api';
-import { execute } from './executor';
+import { IDatabaseDriver, IQuery, IQueryResult, Fn } from '@chego/chego-api';
+import { newQueryResult, parseSchemeToSQL, newSqlExecutor, } from '@chego/chego-database-boilerplate'
+import { templates } from './templates';
+
+const newTransactionHandle = (connection: mysql.Connection) => (queries: IQuery[]) => {
+    const queryCallback = (error: Error, result: any) => {
+        if (error) {
+            connection.rollback();
+        } else {
+            result.setData(result);
+        }
+    }
+    return new Promise((resolve, reject) => {
+        connection.beginTransaction(async (error: Error) => {
+            const result: IQueryResult = newQueryResult();
+            if (error) {
+                return reject(error);
+            }
+            for (const query of queries) {
+                const sql: string = parseSchemeToSQL(query.scheme, templates);
+                await connection.query(sql, queryCallback);
+            }
+            connection.commit((error: Error) => error
+                ? (connection.rollback(), reject(error))
+                : resolve(result.getData())
+            );
+        });
+    });
+}
+
+const newQueryHandle = (connection: mysql.Connection) => (query: IQuery) =>
+    new Promise((resolve, reject) => {
+        const sql: string = parseSchemeToSQL(query.scheme, templates);
+        connection.query(sql, (error: Error, result: any) =>
+            (error) ? reject(error) : resolve(result));
+    });
 
 export const chegoMySQL = (): IDatabaseDriver => {
     let initialized: boolean = false;
@@ -16,7 +50,16 @@ export const chegoMySQL = (): IDatabaseDriver => {
             if (!initialized) {
                 throw new Error('Driver not initialized');
             }
-            return execute(connection, queries).then(resolve).catch(reject);
+            
+            const queryHandle: Fn<Promise<any>> = newQueryHandle(connection);
+            const transactionHandle: Fn<Promise<any>> = newTransactionHandle(connection);
+
+            return newSqlExecutor()
+                .withQueryHandle(queryHandle)
+                .withTransactionsHandle(transactionHandle)
+                .execute(queries)
+                .then(resolve)
+                .catch(reject);
         }),
         connect: (): Promise<any> => new Promise((resolve) => {
             connection.connect();
