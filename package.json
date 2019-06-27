@@ -1,6 +1,6 @@
 {
   "name": "@chego/chego-mysql",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "MySQL driver for Chego library.",
   "main": "lib/index.js",
   "files": [
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@chego/chego-api": "2.1.0",
-    "@chego/chego-database-boilerplate": "^1.2.0",
+    "@chego/chego-database-boilerplate": "1.3.0",
     "@chego/chego-tools": "^2.1.0",
     "mysql": "^2.16.0"
   }

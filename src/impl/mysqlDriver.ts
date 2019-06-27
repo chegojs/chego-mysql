@@ -1,6 +1,6 @@
 import * as mysql from 'mysql'
 import { IDatabaseDriver, IQuery, IQueryResult, Fn } from '@chego/chego-api';
-import { newQueryResult, parseSchemeToSQL, newSqlExecutor, } from '@chego/chego-database-boilerplate'
+import { newQueryResult, parseSchemeToSQL, newSqlExecutor, SQLQuery, } from '@chego/chego-database-boilerplate'
 import { templates } from './templates';
 
 const newTransactionHandle = (connection: mysql.Connection) => (queries: IQuery[]) => {
@@ -18,8 +18,8 @@ const newTransactionHandle = (connection: mysql.Connection) => (queries: IQuery[
                 return reject(error);
             }
             for (const query of queries) {
-                const sql: string = parseSchemeToSQL(query.scheme, templates);
-                await connection.query(sql, queryCallback);
+                const sql: SQLQuery = parseSchemeToSQL(query.scheme, templates);
+                await connection.query(sql.body, queryCallback);
             }
             connection.commit((error: Error) => error
                 ? (connection.rollback(), reject(error))
@@ -31,8 +31,8 @@ const newTransactionHandle = (connection: mysql.Connection) => (queries: IQuery[
 
 const newQueryHandle = (connection: mysql.Connection) => (query: IQuery) =>
     new Promise((resolve, reject) => {
-        const sql: string = parseSchemeToSQL(query.scheme, templates);
-        connection.query(sql, (error: Error, result: any) =>
+        const sql: SQLQuery = parseSchemeToSQL(query.scheme, templates);
+        connection.query(sql.body, (error: Error, result: any) =>
             (error) ? reject(error) : resolve(result));
     });
 
